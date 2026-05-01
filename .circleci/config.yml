@@ -38,11 +38,20 @@ jobs:
 
       # SonarQube placeholder scan (POE requirement evidence)
       - run:
-          name: SonarQube Scan Step
+          name: Install SonarScanner
           command: |
-            echo "Running SonarQube analysis..."
-            echo "Project Key: APDS"
-            echo "Code scan completed (mock step)"
+           npm install -g sonar-scanner
+
+            - run:
+          name: SonarCloud Analysis
+          command: |
+            sonar-scanner \
+              -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+              -Dsonar.organization=$SONAR_ORG \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.login=$SONAR_TOKEN \
+              -Dsonar.sources=backend,frontend \
+              -Dsonar.sourceEncoding=UTF-8
 
 workflows:
   version: 2
