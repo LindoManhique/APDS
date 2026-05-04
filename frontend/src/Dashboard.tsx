@@ -21,6 +21,10 @@ export const Dashboard = () => {
     }
   };
 
+  const goToTransactions = () => {
+  navigate("/transactions");
+};
+
   useEffect(() => {
     getUserData();
   }, []);
@@ -42,6 +46,7 @@ export const Dashboard = () => {
 
         <div className="dashboard-buttons">
           <button onClick={goToPayments}>Go to Payments</button>
+          <button onClick={goToTransactions}>View My Transactions</button>
           <button onClick={logout}>Logout</button>
         </div>
       </div>
