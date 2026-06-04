@@ -50,7 +50,6 @@ export default function login() {
         />
 
         <button onClick={login}>Login</button>
-        <button onClick={signup}>Sign Up here</button>
       </div>
     </>
   );

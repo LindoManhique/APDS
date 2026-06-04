@@ -11,6 +11,7 @@ interface Transaction {
   payee_account_number: string;
   swift_code: string;
   created_at: string;
+  status: string;  // ADDED
 }
 
 export const Transactions = () => {
@@ -43,6 +44,16 @@ export const Transactions = () => {
     navigate("/dashboard");
   };
 
+  // Helper function to get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'green';
+      case 'rejected': return 'red';
+      case 'pending': return 'orange';
+      default: return 'black';
+    }
+  };
+
   return (
     <div className="transactions-page">
       <div className="transactions-card">
@@ -58,6 +69,7 @@ export const Transactions = () => {
                   Provider: {tx.provider}<br />
                   Payee Account: {tx.payee_account_number}<br />
                   SWIFT: {tx.swift_code}<br />
+                  Status: <strong style={{ color: getStatusColor(tx.status) }}>{tx.status.toUpperCase()}</strong><br />
                   Date: {new Date(tx.created_at).toLocaleString()}
                 </div>
               </div>

@@ -49,10 +49,99 @@ app.use(limiter);
 
 const PORT = process.env.PORT || 5000;
 
+// ============= ADMIN CHECK MIDDLEWARE =============
+const isAdmin = async (req, res, next) => {
+    try {
+        const [user] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [req.userId]);
+        if (!user[0]?.is_admin) {
+            return res.status(403).json({ error: "Admin access required" });
+        }
+        next();
+    } catch (error) {
+        return res.status(500).json({ error: "Server error" });
+    }
+};
 
-// SIGNUP (VALIDATION + SECURITY)
+// ============= ADMIN ROUTES (ALL NOW PROTECTED WITH isAdmin) =============
+
+// Create new user (admin only)
+app.post('/admin/create-user', verifyToken, isAdmin, async (req, res) => {
+    const { fullNames, idNumber, accountNumber, password } = req.body;
+    
+    // Input validation
+    if (!validateFullName(fullNames) || !validateIdNumber(idNumber) || !validateAccountNumber(accountNumber)) {
+        return res.status(400).json({ error: "Invalid input detected (RegEx validation failed)" });
+    }
+    
+    try {
+        const hashedPassword = await hashPassword(password);
+        await pool.query(
+            'INSERT INTO users (Full_name, id_number, account_number, password, is_admin) VALUES (?, ?, ?, ?, false)',
+            [fullNames, idNumber, accountNumber, hashedPassword]
+        );
+        res.json({ message: "User created successfully" });
+    } catch (error) {
+        if (error.code === "ER_DUP_ENTRY") {
+            return res.status(400).json({ error: "Duplicate entry detected (ID or Account already exists)" });
+        }
+        res.status(500).json({ error: "Server error during user creation" });
+    }
+});
+
+// Get all pending payments (admin only)
+app.get('/admin/pending-payments', verifyToken, isAdmin, async (req, res) => {
+    try {
+        const [payments] = await pool.query(
+            'SELECT t.*, u.Full_name as user_name FROM transactions t JOIN users u ON t.user_id = u.id WHERE t.status = "pending" OR t.status IS NULL ORDER BY t.created_at DESC'
+        );
+        res.json({ payments });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Approve payment (admin only)
+app.put('/admin/approve-payment/:id', verifyToken, isAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query(
+            'UPDATE transactions SET status = "approved" WHERE id = ?',
+            [id]
+        );
+        res.json({ message: "Payment approved" });
+    } catch (error) {
+        res.status(500).json({ error: "Approval failed" });
+    }
+});
+
+// Reject payment (admin only)
+app.put('/admin/reject-payment/:id', verifyToken, isAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query(
+            'UPDATE transactions SET status = "rejected" WHERE id = ?',
+            [id]
+        );
+        res.json({ message: "Payment rejected" });
+    } catch (error) {
+        res.status(500).json({ error: "Rejection failed" });
+    }
+});
+
+// ============= END ADMIN ROUTES =============
+
+// GET CURRENT USER INFO (for frontend to check admin status)
+app.get('/me', verifyToken, async (req, res) => {
+    try {
+        const [user] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [req.userId]);
+        res.json({ is_admin: user[0]?.is_admin || false });
+    } catch (error) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// SIGNUP (VALIDATION + SECURITY) - REMOVE OR COMMENT THIS IF NO SELF-REGISTRATION
 app.post('/signup', async (req, res) => {
-
     console.log("SIGNUP ROUTE HIT - NEW CODE");
 
     const { fullNames, idNumber, accountNumber, password } = req.body;
@@ -72,8 +161,8 @@ app.post('/signup', async (req, res) => {
 
     try {
         const sql = `
-            INSERT INTO users(Full_name, id_number, account_number, password)
-            VALUES(?, ?, ?, ?)
+            INSERT INTO users(Full_name, id_number, account_number, password, is_admin)
+            VALUES(?, ?, ?, ?, false)
         `;
 
         await pool.query(sql, [
@@ -100,10 +189,8 @@ app.post('/signup', async (req, res) => {
     }
 });
 
-
 // LOGIN (JWT SECURITY ADDED PROTECTION)
 app.post('/login', async (req, res) => {
-
     const { idNumber, password } = req.body;
 
     const [result] = await pool.query(
@@ -123,10 +210,7 @@ app.post('/login', async (req, res) => {
     const isValid = await verifyPassword(password, dbPassword);
 
     if (isValid) {
-
-        // SECURITY FIX: token expiry added (session hijacking protection)
-        const token = await generateToken(userId, { expiresIn: "1h" });
-
+        const token = await generateToken(userId);
         return res.status(200).json({
             message: "success",
             token: token
@@ -138,16 +222,13 @@ app.post('/login', async (req, res) => {
     }
 });
 
-
 // DASHBOARD (PROTECTED ROUTE)
 app.get('/dashboard', verifyToken, (req, res) => {
     res.json({ message: `Welcome user ${req.userId}` });
 });
 
-
 // PAYMENT (FULL VALIDATION SECURITY)
 app.post('/payment', verifyToken, async (req, res) => {
-
     const {
         paymentAmount,
         currency,
@@ -155,7 +236,9 @@ app.post('/payment', verifyToken, async (req, res) => {
         payeeAccountNumber,
         swiftCode
     } = req.body;
-  console.log(validateAmount(paymentAmount),validateAccountNumber(payeeAccountNumber), validateSwiftCode(swiftCode))
+    
+    console.log(validateAmount(paymentAmount), validateAccountNumber(payeeAccountNumber), validateSwiftCode(swiftCode))
+    
     // INPUT VALIDATION
     if (
         !validateAmount(paymentAmount) ||
@@ -179,12 +262,12 @@ app.post('/payment', verifyToken, async (req, res) => {
                 message: "All payment fields are required"
             });
         }
-        //get the userId
+        
         const user_id = req.userId;
         const sql = `
             INSERT INTO transactions
-            (payment_amount, currency, provider, payee_account_number, swift_code, user_id)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (payment_amount, currency, provider, payee_account_number, swift_code, user_id, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'pending')
         `;
 
         await pool.query(sql, [
@@ -202,31 +285,30 @@ app.post('/payment', verifyToken, async (req, res) => {
 
     } catch (error) {
         console.log(error);
-
         res.status(500).json({
             message: "Payment submission failed"
         });
     }
-});
+}); 
 
 // GET USER TRANSACTIONS
 app.get('/transactions', verifyToken, async (req, res) => {
-  const userId = req.userId;
+    const userId = req.userId;
 
-  try {
-    const sql = `
-      SELECT id, payment_amount, currency, provider, payee_account_number, swift_code, created_at
-      FROM transactions
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-    `;
-    const [transactions] = await pool.query(sql, [userId]);
+    try {
+        const sql = `
+            SELECT id, payment_amount, currency, provider, payee_account_number, swift_code, created_at, status
+            FROM transactions
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        `;
+        const [transactions] = await pool.query(sql, [userId]);
 
-    res.status(200).json({ transactions });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Failed to fetch transactions" });
-  }
+        res.status(200).json({ transactions });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Failed to fetch transactions" });
+    }
 });
 
 // START SERVER
