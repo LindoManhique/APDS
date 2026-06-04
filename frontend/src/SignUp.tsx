@@ -21,10 +21,11 @@ function SignUp() {
       setIdNumber("");
       setAccountNumber("");
       setPassword("");
+      setConfirmPassword("")
       alert("Account created succesfully, Please login");
     } catch (error: any) {
       if (error) {
-        alert("Duplicates not allowed please confirm you entries");
+        alert(error);
       }
     }
   };

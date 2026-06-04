@@ -209,6 +209,25 @@ app.post('/payment', verifyToken, async (req, res) => {
     }
 });
 
+// GET USER TRANSACTIONS
+app.get('/transactions', verifyToken, async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const sql = `
+      SELECT id, payment_amount, currency, provider, payee_account_number, swift_code, created_at
+      FROM transactions
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `;
+    const [transactions] = await pool.query(sql, [userId]);
+
+    res.status(200).json({ transactions });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to fetch transactions" });
+  }
+});
 
 // START SERVER
 app.listen(PORT, () => {

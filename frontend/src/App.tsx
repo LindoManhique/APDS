@@ -3,6 +3,7 @@ import Login from "./Login";
 import SignUp from "./SignUp";
 import { Dashboard } from "./Dashboard";
 import Payment from "./Payment";
+import { Transactions } from "./Transactions";
 
 function App() {
   return (
@@ -12,6 +13,8 @@ function App() {
       <Route path="/signup" element={<SignUp />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/payment" element={<Payment />} />
+      <Route path="/transactions" element={<Transactions />} />
+      
     </Routes>
   );
 }
