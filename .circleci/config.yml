@@ -29,29 +29,25 @@ jobs:
             cd backend
             node -e "console.log('Backend OK')"
 
-      # Frontend build check
+      # Frontend sanity check
       - run:
           name: Frontend sanity check
           command: |
             cd frontend
             npm run build || echo "Build skipped"
-            
 
       # SonarCloud scan
       - run:
           name: SonarCloud Scan
-
-    command: |
-
-      npx sonar-scanner \
-
-        -Dsonar.projectKey=APDS \
-        -Dsonar.organization=LindoManhique \
-        -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.token=$SONAR_TOKEN \
-        -Dsonar.sources=backend,frontend \
-        -Dsonar.sourceEncoding=UTF-8 \
-        -Dsonar.qualitygate.wait=true
+          command: |
+            npx sonar-scanner \
+              -Dsonar.projectKey=APDS \
+              -Dsonar.organization=LindoManhique \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.token=$SONAR_TOKEN \
+              -Dsonar.sources=backend,frontend \
+              -Dsonar.sourceEncoding=UTF-8 \
+              -Dsonar.qualitygate.wait=true
 
 workflows:
   version: 2
