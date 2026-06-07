@@ -22,14 +22,14 @@ jobs:
             cd frontend
             npm install
 
-      # Basic backend sanity check
+      # Backend sanity check
       - run:
           name: Backend sanity check
           command: |
             cd backend
             node -e "console.log('Backend OK')"
 
-      # Basic frontend check
+      # Frontend build check
       - run:
           name: Frontend sanity check
           command: |
@@ -48,7 +48,8 @@ jobs:
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.login=$SONAR_TOKEN \
               -Dsonar.sources=backend,frontend \
-              -Dsonar.sourceEncoding=UTF-8
+              -Dsonar.sourceEncoding=UTF-8 \
+              -Dsonar.qualitygate.wait=true
 
 workflows:
   version: 2
