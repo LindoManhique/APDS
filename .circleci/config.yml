@@ -36,11 +36,15 @@ jobs:
             cd frontend
             npm run build || echo "Build skipped"
 
-      # SonarCloud scan
+      # SonarCloud scan 
       - run:
           name: SonarCloud Scan
           command: |
-            npx sonar-scanner \
+            npm install -g sonar-scanner
+
+            chmod +x $(npm root -g)/sonar-scanner/bin/sonar-scanner || true
+
+            sonar-scanner \
               -Dsonar.projectKey=APDS \
               -Dsonar.organization=LindoManhique \
               -Dsonar.host.url=https://sonarcloud.io \
