@@ -40,7 +40,7 @@ jobs:
       - run:
           name: SonarCloud Scan
           command: |
-            npm install sonar-scanner
+            npm install 
 
             npx sonar-scanner \
               -Dsonar.projectKey=APDS \
