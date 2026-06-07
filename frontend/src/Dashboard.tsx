@@ -1,18 +1,15 @@
-import { useEffect, useState } from "react";  // Add useState
-import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/Dashboard.css";
+import { api } from "./api";
 
 export const Dashboard = () => {
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);  // ADD THIS
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const getUserData = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/dashboard");
 
       if (res.status !== 200) {
         navigate("/login");
@@ -22,36 +19,30 @@ export const Dashboard = () => {
     }
   };
 
-  // ADD THIS to check admin status
   const checkAdminStatus = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/me");
       setIsAdmin(res.data.is_admin);
     } catch (error) {
-      console.log("Not admin");
+      setIsAdmin(false);
     }
-  };
-
-  const goToTransactions = () => {
-    navigate("/transactions");
   };
 
   useEffect(() => {
     getUserData();
-    checkAdminStatus();  // ADD THIS
+    checkAdminStatus();
   }, []);
 
-  const goToPayments = () => {
-    navigate("/payment");
-  };
+const logout = async () => {
+  try {
+    await api.post("/logout");
+  } catch (error) {
+    console.log(error);
+  }
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
+  localStorage.removeItem("token");
+  navigate("/login");
+};
   return (
     <div className="dashboard-page">
       <div className="dashboard-card">
@@ -59,17 +50,22 @@ export const Dashboard = () => {
         <p>Welcome to the International Payments Portal.</p>
 
         <div className="dashboard-buttons">
-          <button onClick={goToPayments}>Go to Payments</button>
-          <button onClick={goToTransactions}>View My Transactions</button>
-          
-          {/* Only show admin buttons if isAdmin is true */}
+          <button onClick={() => navigate("/payment")}>Go to Payments</button>
+          <button onClick={() => navigate("/transactions")}>
+            View My Transactions
+          </button>
+
           {isAdmin && (
             <>
-              <button onClick={() => navigate("/approvals")}>Approve Payments</button>
-              <button onClick={() => navigate("/admin/create-user")}>Create New User</button>
+              <button onClick={() => navigate("/approvals")}>
+                Approve Payments
+              </button>
+              <button onClick={() => navigate("/admin/create-user")}>
+                Create New User
+              </button>
             </>
           )}
-          
+
           <button onClick={logout}>Logout</button>
         </div>
       </div>

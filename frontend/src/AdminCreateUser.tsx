@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles/AdminCreateUser.css";
+import { api } from "./api";
 
 export const AdminCreateUser = () => {
   const [fullNames, setFullNames] = useState("");
@@ -9,19 +9,15 @@ export const AdminCreateUser = () => {
   const [accountNumber, setAccountNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [makeAdmin, setMakeAdmin] = useState(false);
+
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const checkAdmin = async () => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
       try {
-        const res = await axios.get("http://localhost:5000/me", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get("/me");
+
         if (!res.data.is_admin) {
           alert("Admin access only");
           navigate("/dashboard");
@@ -30,11 +26,12 @@ export const AdminCreateUser = () => {
         navigate("/login");
       }
     };
+
     checkAdmin();
-  }, []);
+  }, [navigate]);
 
   const createUser = async () => {
-    if (!fullNames || !idNumber || !accountNumber || !password) {
+    if (!fullNames || !idNumber || !accountNumber || !password || !confirmPassword) {
       alert("Please fill all fields");
       return;
     }
@@ -46,7 +43,7 @@ export const AdminCreateUser = () => {
 
     const nameRegex = /^[A-Za-z\s]{2,50}$/;
     if (!nameRegex.test(fullNames)) {
-      alert("Full names must contain only letters and spaces (2-50 characters)");
+      alert("Full names must contain only letters and spaces");
       return;
     }
 
@@ -62,26 +59,35 @@ export const AdminCreateUser = () => {
       return;
     }
 
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&.#_-]{8,}$/;
     if (!passwordRegex.test(password)) {
       alert("Password must be at least 8 characters with at least 1 letter and 1 number");
       return;
     }
 
     try {
-      await axios.post(
-        "http://localhost:5000/admin/create-user",
-        { fullNames, idNumber, accountNumber, password },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("User created successfully");
+      const res = await api.post("/admin/create-user", {
+        fullNames,
+        idNumber,
+        accountNumber,
+        password,
+        is_admin: makeAdmin,
+      });
+
+      alert(res.data.message || "User created successfully");
+
       setFullNames("");
       setIdNumber("");
       setAccountNumber("");
       setPassword("");
       setConfirmPassword("");
+      setMakeAdmin(false);
     } catch (error: any) {
-      alert(error?.response?.data?.error || "Creation failed");
+      alert(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          "Creation failed"
+      );
     }
   };
 
@@ -89,7 +95,7 @@ export const AdminCreateUser = () => {
     <div className="admin-create-page">
       <div className="admin-create-card">
         <h1>Create New User</h1>
-        <p>(Admin Only)</p>
+        <p>Admin Only</p>
 
         <input
           placeholder="Full Names"
@@ -100,14 +106,18 @@ export const AdminCreateUser = () => {
         <input
           placeholder="ID Number (13 digits)"
           value={idNumber}
-          onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, '').slice(0,13))}
+          onChange={(e) =>
+            setIdNumber(e.target.value.replace(/\D/g, "").slice(0, 13))
+          }
           type="text"
         />
 
         <input
           placeholder="Account Number (6-10 digits)"
           value={accountNumber}
-          onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0,10))}
+          onChange={(e) =>
+            setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10))
+          }
           type="text"
         />
 
@@ -124,6 +134,15 @@ export const AdminCreateUser = () => {
           onChange={(e) => setConfirmPassword(e.target.value)}
           type="password"
         />
+
+        <label>
+          <input
+            type="checkbox"
+            checked={makeAdmin}
+            onChange={(e) => setMakeAdmin(e.target.checked)}
+          />
+          Make this user an admin
+        </label>
 
         <button onClick={createUser}>Create User</button>
         <button onClick={() => navigate("/dashboard")}>Back</button>

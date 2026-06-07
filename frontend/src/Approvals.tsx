@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles/Approvals.css";
+import { api } from "./api";
 
 interface PendingPayment {
   id: number;
@@ -17,7 +17,6 @@ interface PendingPayment {
 export const Approvals = () => {
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,34 +24,23 @@ export const Approvals = () => {
   }, []);
 
   const checkAdminAndFetch = async () => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     try {
-      // Check if user is admin
-      const meRes = await axios.get("http://localhost:5000/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
+      const meRes = await api.get("/me");
+
       if (!meRes.data.is_admin) {
         alert("Admin access only");
         navigate("/dashboard");
         return;
       }
 
-      // Fetch pending payments
-      const res = await axios.get("http://localhost:5000/admin/pending-payments", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/admin/pending-payments");
       setPayments(res.data.payments);
     } catch (error: any) {
       if (error?.response?.status === 403) {
         alert("Admin access required");
         navigate("/dashboard");
       } else {
-        alert("Failed to fetch pending payments");
+        navigate("/login");
       }
     } finally {
       setLoading(false);
@@ -61,11 +49,7 @@ export const Approvals = () => {
 
   const approvePayment = async (id: number) => {
     try {
-      await axios.put(
-        `http://localhost:5000/admin/approve-payment/${id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/admin/approve-payment/${id}`, {});
       alert("Payment approved");
       checkAdminAndFetch();
     } catch (error) {
@@ -75,11 +59,7 @@ export const Approvals = () => {
 
   const rejectPayment = async (id: number) => {
     try {
-      await axios.put(
-        `http://localhost:5000/admin/reject-payment/${id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/admin/reject-payment/${id}`, {});
       alert("Payment rejected");
       checkAdminAndFetch();
     } catch (error) {
@@ -123,6 +103,7 @@ export const Approvals = () => {
                 <p>
                   <strong>Date:</strong> {new Date(p.created_at).toLocaleString()}
                 </p>
+
                 <div className="approval-buttons">
                   <button className="approve" onClick={() => approvePayment(p.id)}>
                     Approve

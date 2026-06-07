@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles/Transactions.css";
+import { api } from "./api";
 
 interface Transaction {
   id: number;
@@ -11,25 +11,17 @@ interface Transaction {
   payee_account_number: string;
   swift_code: string;
   created_at: string;
-  status: string;  // ADDED
+  status: string;
 }
 
 export const Transactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTransactions = async () => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       try {
-        const res = await axios.get("http://localhost:5000/transactions", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/transactions");
         setTransactions(res.data.transactions);
       } catch (error) {
         console.error(error);
@@ -38,19 +30,18 @@ export const Transactions = () => {
     };
 
     fetchTransactions();
-  }, [token, navigate]);
+  }, [navigate]);
 
-  const goBack = () => {
-    navigate("/dashboard");
-  };
-
-  // Helper function to get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'green';
-      case 'rejected': return 'red';
-      case 'pending': return 'orange';
-      default: return 'black';
+      case "approved":
+        return "green";
+      case "rejected":
+        return "red";
+      case "pending":
+        return "orange";
+      default:
+        return "black";
     }
   };
 
@@ -58,25 +49,39 @@ export const Transactions = () => {
     <div className="transactions-page">
       <div className="transactions-card">
         <h1>Your Transactions</h1>
+
         {transactions.length === 0 ? (
           <p>No transactions found.</p>
         ) : (
           <div className="transactions-list">
             {transactions.map((tx) => (
               <div key={tx.id} className="transaction-item">
-                <div className="tx-amount">{tx.payment_amount} {tx.currency}</div>
+                <div className="tx-amount">
+                  {tx.payment_amount} {tx.currency}
+                </div>
+
                 <div className="tx-details">
-                  Provider: {tx.provider}<br />
-                  Payee Account: {tx.payee_account_number}<br />
-                  SWIFT: {tx.swift_code}<br />
-                  Status: <strong style={{ color: getStatusColor(tx.status) }}>{tx.status.toUpperCase()}</strong><br />
+                  Provider: {tx.provider}
+                  <br />
+                  Payee Account: {tx.payee_account_number}
+                  <br />
+                  SWIFT: {tx.swift_code}
+                  <br />
+                  Status:{" "}
+                  <strong style={{ color: getStatusColor(tx.status) }}>
+                    {tx.status.toUpperCase()}
+                  </strong>
+                  <br />
                   Date: {new Date(tx.created_at).toLocaleString()}
                 </div>
               </div>
             ))}
           </div>
         )}
-        <button onClick={goBack} className="back-button">Back to Dashboard</button>
+
+        <button onClick={() => navigate("/dashboard")} className="back-button">
+          Back to Dashboard
+        </button>
       </div>
     </div>
   );

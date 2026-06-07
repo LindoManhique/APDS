@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles/Payment.css";
+import { api } from "./api";
 
 function Payment() {
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -11,44 +11,41 @@ function Payment() {
   const [payeeAccountNumber, setPayeeAccountNumber] = useState("");
   const [swiftCode, setSwiftCode] = useState("");
   const [swiftError, setSwiftError] = useState("");
+
   const navigate = useNavigate();
 
-  const pageBack = () => {
-    navigate(-1);
-  };
-
-  // Real-time SWIFT validation - MATCHES BACKEND: 9-11 characters
   const validateSwiftCodeRealTime = (code: string) => {
     if (!code) {
       setSwiftError("");
       return false;
     }
-    
-    // Check length range (9-11 chars)
+
     if (code.length < 9) {
-      setSwiftError(`❌ Too short: ${code.length} chars. SWIFT code needs 9-11 characters total`);
+      setSwiftError(
+        `❌ Too short: ${code.length} chars. SWIFT code needs 9-11 characters total`
+      );
       return false;
     }
-    
+
     if (code.length > 11) {
-      setSwiftError(`❌ Too long: ${code.length} chars. SWIFT code needs 9-11 characters total`);
+      setSwiftError(
+        `❌ Too long: ${code.length} chars. SWIFT code needs 9-11 characters total`
+      );
       return false;
     }
-    
-    // Check first 6 characters are letters
+
     const firstSix = code.substring(0, 6);
     if (!/^[A-Z]{6}$/.test(firstSix)) {
-      setSwiftError("❌ First 6 characters must be letters A-Z only (bank + country code)");
+      setSwiftError("❌ First 6 characters must be letters A-Z only");
       return false;
     }
-    
-    // Check last 3-5 characters are alphanumeric
+
     const lastPart = code.substring(6);
     if (!/^[A-Z0-9]{3,5}$/.test(lastPart)) {
-      setSwiftError(`❌ Last part must be 3-5 letters or numbers (currently ${lastPart.length} chars)`);
+      setSwiftError("❌ Last part must be 3-5 letters or numbers");
       return false;
     }
-    
+
     setSwiftError("✅ Valid SWIFT code format");
     return true;
   };
@@ -61,49 +58,37 @@ function Payment() {
 
   const handlePayment = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Please login first.");
-      localStorage.clear();
-      navigate('/login');
-      return;
-    }
 
-    // Payment amount validation
     const amountNum = parseFloat(paymentAmount);
+
     if (isNaN(amountNum) || amountNum <= 10) {
       alert("❌ Payment amount must be greater than 10");
       return;
     }
 
-    // Account number validation
     if (!/^[0-9]{6,20}$/.test(payeeAccountNumber)) {
-      alert("❌ Account number must be 6-20 digits only (no letters or special characters)");
+      alert("❌ Account number must be 6-20 digits only");
       return;
     }
 
-    // SWIFT validation - MATCHING BACKEND EXACTLY
     if (!swiftCode) {
       alert("❌ SWIFT code is required");
       return;
     }
-    
-    // Check length (9-11 characters)
+
     if (swiftCode.length < 9 || swiftCode.length > 11) {
-      alert(`❌ SWIFT code must be 9-11 characters long.\n\nYour code has ${swiftCode.length} characters.\n\nFormat: PPPPCCXXX (4 bank letters + 2 country letters + 3-5 branch letters/numbers)`);
+      alert("❌ SWIFT code must be 9-11 characters long");
       return;
     }
-    
-    // Check first 6 characters are letters
+
     if (!/^[A-Z]{6}$/.test(swiftCode.substring(0, 6))) {
-      alert("❌ First 6 characters of SWIFT code must be letters A-Z only\n\nExample: 'FIRNZA' (bank + country code)");
+      alert("❌ First 6 characters of SWIFT code must be letters A-Z only");
       return;
     }
-    
-    // Check last 3-5 characters are alphanumeric
+
     const lastPart = swiftCode.substring(6);
     if (!/^[A-Z0-9]{3,5}$/.test(lastPart)) {
-      alert(`❌ Last ${lastPart.length} characters must be 3-5 letters or numbers\n\nExample: 'JJX' (3 chars) or 'JJXXX' (5 chars)`);
+      alert("❌ Last part of SWIFT code must be 3-5 letters or numbers");
       return;
     }
 
@@ -115,12 +100,8 @@ function Payment() {
         payeeAccountNumber,
         swiftCode,
       };
-      
-      const res = await axios.post("http://localhost:5000/payment", data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+
+      const res = await api.post("/payment", data);
 
       alert(res.data.message);
 
@@ -130,6 +111,12 @@ function Payment() {
       setSwiftCode("");
       setSwiftError("");
     } catch (error: any) {
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        alert("Please login first.");
+        navigate("/login");
+        return;
+      }
+
       alert(error?.response?.data?.message || "Payment failed");
     }
   };
@@ -176,7 +163,7 @@ function Payment() {
             placeholder="Enter 6-20 digit account number"
             value={payeeAccountNumber}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setPayeeAccountNumber(e.target.value.replace(/[^0-9]/g, ''))
+              setPayeeAccountNumber(e.target.value.replace(/[^0-9]/g, ""))
             }
             required
           />
@@ -184,23 +171,32 @@ function Payment() {
           <label>SWIFT/BIC Code (9-11 characters)</label>
           <input
             type="text"
-            placeholder="Example: FIRNZAJJX (9 chars) or FIRNZAJJXXX (11 chars)"
+            placeholder="Example: FIRNZAJJX"
             value={swiftCode}
             onChange={handleSwiftCodeChange}
             required
           />
+
           {swiftError && (
-            <div className="error-message" style={{color: swiftError.includes("✅") ? "green" : "red", fontSize: "12px", marginTop: "-10px", marginBottom: "10px"}}>
+            <div
+              className="error-message"
+              style={{
+                color: swiftError.includes("✅") ? "green" : "red",
+                fontSize: "12px",
+                marginTop: "-10px",
+                marginBottom: "10px",
+              }}
+            >
               {swiftError}
             </div>
           )}
-          
+
           <button type="submit">Pay Now</button>
-          <button type="button" onClick={pageBack}>Back</button>
+          <button type="button" onClick={() => navigate(-1)}>
+            Back
+          </button>
         </form>
-        
       </div>
-      
     </div>
   );
 }

@@ -1,45 +1,57 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/Login.css";
-import axios from "axios";
+import { api } from "./api";
 
-export default function login() {
-  const [idNumber, setIdNumber] = useState<number>();
-  const [password, setPassword] = useState<string>("");
+export default function Login() {
+  const [idNumber, setIdNumber] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const signup = async () => {
-    navigate("/SignUp");
-  };
-
   const login = async () => {
-    validation();
-    const data = { idNumber, password };
+    if (!idNumber || !password) {
+      alert("Please enter all fields");
+      return;
+    }
 
     try {
-      const res = await axios.post(`http://localhost:5000/login`, data);
+      const res = await api.post("/login", {
+        idNumber,
+        password,
+      });
+
       if (res.data.message === "success" && res.status === 200) {
-        const token = res.data.token;
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", res.data.token);
+
+        // Admins and normal users now both land on dashboard
         navigate("/dashboard");
+      } else {
+        alert(res.data.message || "Login failed");
       }
     } catch (error: any) {
-      alert(error?.response?.data?.message);
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Login failed";
+
+      alert(message);
+      console.log(error);
     }
-  };
-  const validation = () => {
-    if (!(idNumber && password)) return alert("Please enter all fields");
   };
 
   return (
     <>
       <h1>Login</h1>
+
       <div className="login-page">
         <input
           value={idNumber}
           placeholder="ID Number"
-          onChange={(e) => setIdNumber(Number(e.target.value))}
-          type="number"
+          onChange={(e) =>
+            setIdNumber(e.target.value.replace(/\D/g, "").slice(0, 13))
+          }
+          type="text"
         />
 
         <input
