@@ -22,7 +22,7 @@ jobs:
             cd frontend
             npm install
 
-      # Basic backend start test (just checks it runs)
+      # Basic backend sanity check
       - run:
           name: Backend sanity check
           command: |
@@ -40,9 +40,9 @@ jobs:
       - run:
           name: SonarCloud Scan
           command: |
-            npm install -g sonar-scanner
+            npm install sonar-scanner
 
-            sonar-scanner \
+            npx sonar-scanner \
               -Dsonar.projectKey=APDS \
               -Dsonar.organization=LindoManhique \
               -Dsonar.host.url=https://sonarcloud.io \
