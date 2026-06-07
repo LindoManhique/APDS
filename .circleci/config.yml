@@ -36,13 +36,16 @@ jobs:
             cd frontend
             npm run build || echo "Build skipped"
 
-      # SonarCloud scan
+      #  SonarCloud Scan 
       - run:
           name: SonarCloud Scan
           command: |
-            npm install -g sonar-scanner
+            apt-get update && apt-get install -y unzip curl
 
-            chmod +x $(npm root -g)/sonar-scanner/bin/sonar-scanner || true
+            curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+            unzip sonar-scanner.zip
+
+            export PATH=$PWD/sonar-scanner-*/bin:$PATH
 
             sonar-scanner \
               -Dsonar.projectKey=APDS \
