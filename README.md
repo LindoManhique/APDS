@@ -113,11 +113,13 @@ Example `.env` file:
 
 ```
 DB_HOST=localhost
-DB_USER=your_mysql_user
-DB_PASSWORD=your_mysql_password
+DB_USER=root
+DB_PASSWORD=
 DB_NAME=international_payments
 PORT=5000
-SECRET_KEY=your_secret_key_here
+SECRET_KEY=mysecretkey
+FRONTEND_ORIGIN=http://localhost:5173
+NODE_ENV=development
 ```
 
 Important:
