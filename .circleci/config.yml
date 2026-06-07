@@ -36,18 +36,15 @@ jobs:
             cd frontend
             npm run build || echo "Build skipped"
 
-      # SonarQube placeholder scan (POE requirement evidence)
+      # SonarCloud scan 
       - run:
-          name: Install SonarScanner
+          name: SonarCloud Scan
           command: |
-           npm install -g sonar-scanner
+            npm install -g sonar-scanner
 
-            - run:
-          name: SonarCloud Analysis
-          command: |
             sonar-scanner \
-              -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-              -Dsonar.organization=$SONAR_ORG \
+              -Dsonar.projectKey=APDS \
+              -Dsonar.organization=LindoManhique \
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.login=$SONAR_TOKEN \
               -Dsonar.sources=backend,frontend \
