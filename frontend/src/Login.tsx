@@ -21,9 +21,13 @@ export default function Login() {
       });
 
       if (res.data.message === "success" && res.status === 200) {
-        localStorage.setItem("token", res.data.token);
+        const token = res.data.token;
 
-        // Admins and normal users now both land on dashboard
+        // SAFE GUARD 
+        if (typeof token === "string" && token.length > 10) {
+          localStorage.setItem("token", token);
+        }
+
         navigate("/dashboard");
       } else {
         alert(res.data.message || "Login failed");
