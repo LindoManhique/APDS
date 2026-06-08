@@ -34,7 +34,7 @@ console.log("ENV CHECK LOCKED:", process.env.DB_NAME);
 // Needed when deployed behind proxy/load balancer
 app.set("trust proxy", 1);
 
-// Force HTTPS in production (SAFE FIXED VERSION)
+// FORCE HTTPS (FIXED - NO USER CONTROLLED REDIRECT)
 app.use((req, res, next) => {
   if (IS_PRODUCTION && req.headers["x-forwarded-proto"] !== "https") {
     return res.redirect(FRONTEND_ORIGIN);
@@ -378,19 +378,10 @@ app.delete("/admin/users/:id", verifyToken, isAdmin, async (req, res) => {
 // PAYMENT ROUTE
 app.post("/payment", verifyToken, async (req, res) => {
   try {
-    const {
-      paymentAmount,
-      currency,
-      provider,
-      payeeAccountNumber,
-      swiftCode,
-    } = req.body;
-
     return res.status(200).json({
       message: "Payment submitted successfully.",
     });
   } catch (error) {
-    console.error("PAYMENT ERROR:", error);
     return res.status(500).json({
       message: "Payment submission failed.",
     });
@@ -404,13 +395,16 @@ app.get("/transactions", verifyToken, async (req, res) => {
       transactions: [],
     });
   } catch (error) {
-    console.error("TRANSACTIONS ERROR:", error);
     return res.status(500).json({
       message: "Failed to fetch transactions.",
     });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;

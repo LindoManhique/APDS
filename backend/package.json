@@ -1,5 +1,8 @@
 {
       "type": "module",
+      "scripts": {
+            "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+      },
       "dependencies": {
             "bcrypt": "^6.0.0",
             "cookie-parser": "^1.4.7",
@@ -10,5 +13,9 @@
             "helmet": "^8.1.0",
             "jsonwebtoken": "^9.0.3",
             "mysql2": "^3.22.3"
+      },
+      "devDependencies": {
+            "jest": "^30.4.2",
+            "supertest": "^7.2.2"
       }
 }
