@@ -6,7 +6,8 @@ jobs:
       - image: cimg/node:18.0
 
     steps:
-      - checkout
+      - checkout:
+          depth: 0
 
       # Install backend dependencies
       - run:
