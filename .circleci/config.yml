@@ -8,6 +8,12 @@ jobs:
     steps:
       - checkout
 
+      - run:
+          name: Fix Git repository (required for SonarCloud SCM)
+          command: |
+            git fetch --all --tags
+            git fsck --full || true
+
       # Install backend dependencies
       - run:
           name: Install backend dependencies
@@ -36,13 +42,6 @@ jobs:
             cd frontend
             npm run build || true
 
-      # FIX: ensure full git history for SonarCloud SCM
-      - run:
-          name: Prepare Git for SonarCloud
-          command: |
-            git fetch --unshallow || true
-            git fetch --all --tags
-
       # SONAR CLOUD
       - run:
           name: Install SonarScanner
@@ -65,7 +64,7 @@ jobs:
               -Dsonar.sourceEncoding=UTF-8 \
               -Dsonar.coverage.exclusions=**/* \
               -Dsonar.qualitygate.wait=false \
-              -Dsonar.scm.disabled=false
+              -Dsonar.scm.forceReloadAll=true
 
 workflows:
   version: 2
