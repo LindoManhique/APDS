@@ -7,7 +7,7 @@ jobs:
 
     steps:
       - checkout:
-          depth: 0
+          fetch-depth: 0
 
       # Install backend dependencies
       - run:
