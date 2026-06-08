@@ -8,13 +8,6 @@ jobs:
     steps:
       - checkout
 
-      
-      - run:
-          name: Fix Git repository (optional)
-          command: |
-            git fetch --all --tags
-            git fsck --full || true
-
       # Install backend dependencies
       - run:
           name: Install backend dependencies
@@ -38,12 +31,12 @@ jobs:
 
       # Frontend build
       - run:
-          name: Frontend sanity check
+          name: Frontend build
           command: |
             cd frontend
             npm run build || true
 
-      # SONAR CLOUD
+      # Install SonarScanner
       - run:
           name: Install SonarScanner
           command: |
@@ -51,6 +44,7 @@ jobs:
             unzip sonar-scanner.zip
             echo "export PATH=$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH" >> $BASH_ENV
 
+      # SonarCloud Scan (FIXED)
       - run:
           name: SonarCloud Scan
           command: |
@@ -64,7 +58,7 @@ jobs:
               -Dsonar.sources=backend,frontend \
               -Dsonar.sourceEncoding=UTF-8 \
               -Dsonar.coverage.exclusions=**/* \
-              -Dsonar.qualitygate.wait=false \
+              -Dsonar.scm.disabled=true \
               -Dsonar.scm.forceReloadAll=true
 
 workflows:
