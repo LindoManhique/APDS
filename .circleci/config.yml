@@ -6,8 +6,7 @@ jobs:
       - image: cimg/node:18.0
 
     steps:
-      - checkout:
-          fetch-depth: 0
+      - checkout
 
       # Install backend dependencies
       - run:
@@ -37,6 +36,13 @@ jobs:
             cd frontend
             npm run build || true
 
+      # FIX: ensure full git history for SonarCloud SCM
+      - run:
+          name: Prepare Git for SonarCloud
+          command: |
+            git fetch --unshallow || true
+            git fetch --all --tags
+
       # SONAR CLOUD
       - run:
           name: Install SonarScanner
@@ -58,7 +64,8 @@ jobs:
               -Dsonar.sources=backend,frontend \
               -Dsonar.sourceEncoding=UTF-8 \
               -Dsonar.coverage.exclusions=**/* \
-              -Dsonar.qualitygate.wait=false
+              -Dsonar.qualitygate.wait=false \
+              -Dsonar.scm.disabled=false
 
 workflows:
   version: 2
