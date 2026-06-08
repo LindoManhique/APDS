@@ -4,10 +4,10 @@ export const verifyToken = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    const bearerToken =
-      authHeader && authHeader.startsWith("Bearer ")
-        ? authHeader.split(" ")[1]
-        : null;
+    // FIX: optional chaining instead of manual AND check
+    const bearerToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
 
     const cookieToken = req.cookies?.employee_token;
 
