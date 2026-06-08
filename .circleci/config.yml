@@ -36,7 +36,7 @@ jobs:
             cd frontend
             npm run build || echo "Build skipped"
 
-      #  FIXED SONAR CLOUD (ROBUST VERSION)
+      #  FIXED SONAR CLOUD 
       - run:
           name: Install SonarScanner
           command: |
@@ -48,7 +48,7 @@ jobs:
           name: SonarCloud Scan
           command: |
             sonar-scanner \
-              -Dsonar.projectKey=APDS \
+              -Dsonar.projectKey=LindoManhique_APDS \
               -Dsonar.organization=lindomanhique \
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.token=$SONAR_TOKEN \
