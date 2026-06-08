@@ -8,8 +8,9 @@ jobs:
     steps:
       - checkout
 
+      
       - run:
-          name: Fix Git repository (required for SonarCloud SCM)
+          name: Fix Git repository (optional)
           command: |
             git fetch --all --tags
             git fsck --full || true
