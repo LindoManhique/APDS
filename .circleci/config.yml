@@ -29,14 +29,14 @@ jobs:
             cd backend
             node -e "console.log('Backend OK')"
 
-      # Frontend sanity check
+      # Frontend build
       - run:
           name: Frontend sanity check
           command: |
             cd frontend
-            npm run build || echo "Build skipped"
+            npm run build || true
 
-      #  FIXED SONAR CLOUD 
+      #  SONAR CLOUD 
       - run:
           name: Install SonarScanner
           command: |
