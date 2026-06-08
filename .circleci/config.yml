@@ -18,10 +18,15 @@ jobs:
             npm install
 
       - run:
-          name: Run backend tests (safe fallback)
+          name: Run backend tests (with coverage)
           command: |
             cd backend
-            npm test -- --coverage || echo "No backend tests found, skipping coverage"
+            npm test -- --coverage
+
+      - run:
+          name: Verify coverage file exists
+          command: |
+            ls backend/coverage || echo "WARNING: coverage folder missing"
 
       # =========================
       # FRONTEND INSTALL + BUILD
