@@ -15,18 +15,18 @@ jobs:
           name: Install backend dependencies
           command: |
             cd backend
-            npm install
+            npm ci
 
       - run:
           name: Run backend tests (with coverage)
           command: |
             cd backend
-            npm test -- --coverage
+            npm test -- --coverage --watchAll=false
 
       - run:
           name: Verify coverage file exists
           command: |
-            ls backend/coverage || echo "WARNING: coverage folder missing"
+            ls backend/coverage/lcov.info || echo "WARNING: coverage file missing"
 
       # =========================
       # FRONTEND INSTALL + BUILD
@@ -35,7 +35,7 @@ jobs:
           name: Install frontend dependencies
           command: |
             cd frontend
-            npm install
+            npm ci
 
       - run:
           name: Frontend build
@@ -69,7 +69,7 @@ jobs:
               -Dsonar.sources=backend,frontend \
               -Dsonar.sourceEncoding=UTF-8 \
               -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info \
-              -Dsonar.coverage.exclusions=**/* \
+              -Dsonar.coverage.exclusions=backend/server.js \
               -Dsonar.scm.disabled=true
 
 workflows:
