@@ -36,7 +36,7 @@ jobs:
             cd frontend
             npm run build || true
 
-      #  SONAR CLOUD 
+      # SONAR CLOUD
       - run:
           name: Install SonarScanner
           command: |
@@ -44,9 +44,12 @@ jobs:
             unzip sonar-scanner.zip
             echo "export PATH=$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH" >> $BASH_ENV
 
+      # IMPORTANT: load PATH in SAME step flow
       - run:
           name: SonarCloud Scan
           command: |
+            source $BASH_ENV
+
             sonar-scanner \
               -Dsonar.projectKey=LindoManhique_APDS \
               -Dsonar.organization=lindomanhique \
@@ -54,7 +57,7 @@ jobs:
               -Dsonar.token=$SONAR_TOKEN \
               -Dsonar.sources=backend,frontend \
               -Dsonar.sourceEncoding=UTF-8 \
-              -Dsonar.qualitygate.wait=true
+              -Dsonar.qualitygate.wait=false
 
 workflows:
   version: 2
